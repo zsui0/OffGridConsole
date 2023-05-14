@@ -10,6 +10,17 @@ namespace OffGridConsole.Objects
     {
         public double expected { get; set; }
         public double battery { get; set; }
-        public double token { get; set; }
+        public string token { get; set; }
+
+        public EnergyData(double expected, double battery, string token)
+        {
+            this.expected = expected;
+            this.battery = battery;
+            this.token = token;
+        }
+
+        public double AvailableEnergy() {
+            return expected + battery;
+        }
     }
 }

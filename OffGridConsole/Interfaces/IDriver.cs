@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace OffGridConsole.Interfaces
 {
-    internal interface IDriver
+    interface IDriver
     {
+        int SendCommand(string token,Dictionary<string, string> consumers,string status);
     }
 }

@@ -13,10 +13,8 @@ namespace OffGridConsole
     {
         static void Main(string[] args)
         {
-            ILoader loader = new Loader();
-            Profiles pf = new Profiles();
-            pf = loader.loadConsumptionProfiles();
-            pf.ReadData();
+            Controller controller = new Controller();
+            controller.Vezerlo();
             Console.ReadKey();
         }
     }

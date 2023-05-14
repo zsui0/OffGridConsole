@@ -21,5 +21,11 @@ namespace OffGridConsole.Objects
         {
             Console.WriteLine("\n"+hour+" : "+consumption);
         }
+
+        public double ConvertConsumption()
+        {
+            return double.Parse(consumption, System.Globalization.CultureInfo.InvariantCulture);
+
+        }
     }
 }
