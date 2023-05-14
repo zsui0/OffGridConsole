@@ -5,6 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OffGridConsole.Objects;
+using System.IO;
+
+using System.Net;
+using Newtonsoft.Json.Linq;
 
 namespace OffGridConsole.Modules
 {
@@ -46,13 +50,29 @@ namespace OffGridConsole.Modules
                     csoport tagjainak kikapcsolásával. Ebben az esetben is szükséges egy üres parancs
                     kiküldése, viszont már „Error” státusszal.
                  */
+                FileStream stream = null;
+                try
+                {
+                    stream = new FileStream("naplo.txt", FileMode.CreateNew);
+                    // Create a StreamWriter from FileStream  
+                    using (StreamWriter writer = new StreamWriter(stream))
+                    {
+                        writer.WriteLine("Leállás ideje: " + CleanData[0].Consumption.hour);
+                        writer.WriteLine("1. prioritású csoport energia igénye: " + FirstPriorityConsumption(CleanData));
+                        writer.WriteLine("A leállás idejében elérhető energia: " + AvailableEnergy);
+                    }
+                }
+                finally
+                {
+                    if (stream != null) stream.Close();
+                }
                 driver.SendCommand(dataCollector.getEnergyData(12).token, new Dictionary<string, string>(), "ERROR"); // dict üres
             }
             else
             {
                 //a megfelelő eszközök kikapcsolása, parancsok kiküldése a IDrive-nak
 
-                driver.SendCommand(dataCollector.getEnergyData(12).token, new Dictionary<string, string>(), "SUCCESS");
+                driver.SendCommand(dataCollector.getEnergyData(12).token, CommandDictionary(CleanData, MaxConsumption(CleanData), AvailableEnergy), "SUCCESS");
             }
         }
 
@@ -97,8 +117,33 @@ namespace OffGridConsole.Modules
             }
             return firstConsumption;
         }
-        public Dictionary<string, string> CommandDictionary(List<CleanData> cd) {
-            return new Dictionary<string, string>();
+        public Dictionary<string, string> CommandDictionary(List<CleanData> cdl, double maxc, double ae) {
+            Dictionary<string, string> dict = new Dictionary<string, string>();
+
+
+            var json = new WebClient().DownloadString("http://193.6.19.58:2023/offgrid/typecommands");
+            JObject jCommandTypes = JObject.Parse(json);
+            //JToken jtCommandTypes = jCommandTypes.ToObject<JToken>();
+
+            bool runnable = false;
+            foreach (CleanData cd in cdl) {
+                if (cd.priority == 3) {
+                    if ((maxc - cd.Consumption.ConvertConsumption()) <= ae) {
+                        dict.Add(cd.cId, ChangeToNumberCommand(jCommandTypes, cd.type));
+                        runnable = true;
+                    }
+                }
+                if (runnable) break;
+            }
+            return dict;
+        }
+        public string ChangeToNumberCommand(JObject commands, string type) {
+            foreach (var c in commands) {
+                if (c.Key == type) {
+                    return Convert.ToString(c.Value);
+                }
+            }
+            return "";
         }
     }
 }
